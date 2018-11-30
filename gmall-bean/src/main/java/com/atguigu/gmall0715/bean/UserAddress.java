@@ -6,8 +6,8 @@ import java.io.Serializable;
 
 public class UserAddress implements Serializable {
 
-    @Column
     @Id
+    @Column
     private String id;
     @Column
     private String userAddress;

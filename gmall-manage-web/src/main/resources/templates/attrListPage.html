@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>平台属性</title>
+</head>
+<body>
+<div class="easyui-panel" title="" data-options="border:true">
+    <table id="attrInfoListDG" class="easyui-datagrid" title="平台属性列表" style="width:100%;height:100%"
+        data-options="
+            fitColumns:true,
+            singleSelect:true,
+            method:'get',
+            toolbar:'#atrrListTB'
+        "
+    >
+        <thead>
+        <tr>
+            <th data-options="field:'id',width:100">属性id</th>
+            <th data-options="field:'attrName',width:100">属性名</th>
+        </tr>
+        </thead>
+    </table>
+    <div id="atrrListTB">
+        <a href="#" class="easyui-linkbutton" onclick="addAttrInfoDL()"
+           data-options="iconCls:'icon-add',plain:true">添加</a>
+        <a href="#" class="easyui-linkbutton" onclick="editAttrInfoDL()" data-options="iconCls:'icon-edit',plain:true">修改</a>
+        <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true">删除</a>
+        <br>
+        <label for="ctg1ForAttrList">一级分类：</label>
+        <input id="ctg1ForAttrList" class="easyui-combobox"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                url:'getCatalog1',
+                method:'get',
+                onSelect: function(rec){
+                    $('#ctg2ForAttrList').combobox('clear');
+                    $('#ctg3ForAttrList').combobox('clear');
+                    var url = 'getCatalog2?catalog1Id='+rec.id;
+                    $('#ctg2ForAttrList').combobox('reload', url);
+                }
+            "
+        />
+        <label for="ctg2ForAttrList">二级分类：</label>
+        <input id="ctg2ForAttrList" class="easyui-combobox"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                onSelect: function(rec){
+                    $('#ctg3ForAttrList').combobox('clear');
+                    var url = 'getCatalog3?catalog2Id='+rec.id;
+                    $('#ctg3ForAttrList').combobox('reload', url);
+                }
+            "
+        />
+        <label for="ctg3ForAttrList">三级分类：</label>
+        <input id="ctg3ForAttrList" class="easyui-combobox" name="dept"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                method:'get',
+                onSelect: function(rec){
+                    var url = 'attrInfoList?catalog3Id='+rec.id;
+                    $('#attrInfoListDG').datagrid('reload', url);
+                }
+            "
+        />
+    </div>
+    <div id="attrInfoDL" class="easyui-dialog" title="平台属性编辑" style="width:600px;height:400px;"
+         data-options="
+             iconCls:'icon-save',
+             resizable:true,
+             modal:true,
+             closed:true
+         "
+         buttons='#buttonsOfAttrInfoDL'
+    >
+        <br>
+        <label for="attrName">平台属性名称：</label>
+        <input id="attrName" name="attrName" class="easyui-textbox" data-options="" style="width:300px"/>
+        <!--baseAttrValue.attrId=baseAttrInfo.id-->
+        <input id="attrId" name="attrId" type="hidden"/>
+        <br><br>
+        <table id="attrValueListDG" class="easyui-datagrid" title="平台属性值列表" style="width:100%;height:100%"
+            data-options="
+                fitColumns:true,
+                singleSelect:true,
+                method:'get'
+            "
+        >
+        </table>
+    </div>
+    <div id="buttonsOfAttrInfoDL">
+        <a href="#" class="easyui-linkbutton" onclick="saveAttr()">保存</a>
+        <a href="#" class="easyui-linkbutton" onclick="javascript:$('#attrInfoDL').dialog('close')">关闭</a>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    function addAttrInfoDL() {
+        if (!checkBeforeDialog()) {
+            return;
+        }
+        $("#attrInfoDL").dialog('open');
+        //清空原有数据
+        $("#attrId").val("");
+        $("#attrName").textbox('clear');
+        $("#attrValueListDG").datagrid({url: ''});
+        initAttrValueListDG();
+    }
+
+    function checkBeforeDialog() {
+        var ctg3val = $("#ctg3ForAttrList").combobox('getValue');
+        if (ctg3val == '') {
+            //没有选择第三级分类
+            $.messager.alert('警告', '请先选择第三级分类');
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    function initAttrValueListDG() {
+        //清空数据列表
+        var attrValueListDG = $("#attrValueListDG").datagrid('loadData', {total: 0, rows: []});
+        attrValueListDG.datagrid({
+            //表头
+            columns: [[
+                {field: 'id', title: '编号', width: '20%'},
+                {
+                    field: 'valueName', title: '属性值名称', width: '80%',
+                    editor: {
+                        type: 'validatebox', options: {required: true}  //必填项
+                    }
+                }
+            ]],
+            toolbar: [{
+                iconCls: 'icon-add',
+                text: '添加',
+                handler: function () {
+                    //添加一个空白行
+                    attrValueListDG.datagrid('appendRow', {id: '', attrName: ''});
+                }
+            }, '-', {
+                iconCls: 'icon-remove',
+                text: '删除',
+                handler: function () {
+                    //获取选中的行
+                    var selectedRow = attrValueListDG.datagrid('getSelected');
+                    //删除选中的行
+                    if (selectedRow) {
+                        //获取选中行的Index
+                        var rowIndex = attrValueListDG.datagrid('getRowIndex', selectedRow);
+                        attrValueListDG.datagrid('deleteRow', rowIndex);
+                    }
+                }
+            }],
+            onDblClickRow: function (rowIndex, rowData) {
+                //双击开启编辑行
+                attrValueListDG.datagrid("beginEdit", rowIndex);
+                //设定当失去焦点(blur)时,退出编辑状态
+                var valueName = rowData.valueName;
+                $("input.datagrid-editable-input").val(valueName).bind("blur", function (evt) {
+                    attrValueListDG.datagrid('endEdit', rowIndex);
+                });
+            }
+        });
+    }
+
+    function saveAttr() {
+        var attrName = $("#attrName").val();
+        var attrValueRows = $("#attrValueListDG").datagrid('getRows');
+        if (attrName.trim() == '') {
+            $.messager.alert('警告', '请填写\"平台属性名称\"');
+            return false;
+        }
+        if (attrName.trim() == '' && attrValueRows.length == 0) {
+            $('#attrInfoDL').dialog('close');
+            return false;
+        }
+        var attrJson = {};
+        //封装BaseAttrInfo对象
+        attrJson["id"] = $("#attrId").val();
+        attrJson["attrName"] = attrName;
+        attrJson["catalog3Id"] = $("#ctg3ForAttrList").combobox('getValue');
+        //将BaseAttrValue封装进BaseAttrInfo
+        for (var i = 0; i < attrValueRows.length; i++) {
+            attrJson["attrValueList[" + i + "].id"] = attrValueRows[i].id;
+            attrJson["attrValueList[" + i + "].valueName"] = attrValueRows[i].valueName;
+        }
+        console.log(attrJson);
+        $.post("saveAttrInfo", attrJson, function (data) {
+            $("#attrInfoDL").dialog('close');
+            $("#attrInfoListDG").datagrid('reload');
+        })
+    }
+
+    function editAttrInfoDL() {
+        //检测是否已经选择第三级目录
+        if (!checkBeforeDialog()) {
+            return;
+        }
+        //打开对话框
+        $("#attrInfoDL").dialog('open');
+        //调用初始化加载数据
+        initAttrValueListDG();
+        //获取平台属性值的名称, 平台属性的id并且将两个值传递到后台
+        //获取选中的平台属性名称,属性id
+        var selectedRow = $("#attrInfoListDG").datagrid('getSelected');
+        //获取选中行的数据
+        $("#attrValueListDG").datagrid({url: 'getAttrValueList?attrId=' + selectedRow.id});
+        //将属性名称添加到对应的编辑页面的输入框内
+        $("#attrName").textbox('setValue', selectedRow.attrName);
+        //给隐藏属性attrId赋值
+        $("#attrId").val(selectedRow.id);
+    }
+
+    String.prototype.trim = function () {
+        return this.replace(/(^\s*)|(\s*$)/g, "");
+    }
+</script>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>spu列表</title>
+    <!--引入图片上传工具webuploader-->
+    <link rel="stylesheet" type="text/css" href="/webuploader/webuploader.css">
+    <script type="text/javascript" src="/webuploader/webuploader.js"></script>
+    <script type="text/javascript" src="/easyui/datagrid-detailview.js"></script>
+
+</head>
+<body>
+<!--这个页面是商品SPU管理标签页Tabs-->
+<div class="easyui-panel" title="" data-options="border:true">
+    <!-----------------列表 ----------------------------->
+    <table id="spuListDG" class="easyui-datagrid" title="SPU列表" style="width:100%;height:100%"
+        data-options="
+            fitColumns:true,
+            singleSelect:true,
+            method:'get' ,
+            toolbar:'#spuListTB'
+        "
+    >
+        <thead>
+        <tr>
+            <th data-options="field:'id'" width="10%">商品id</th>
+            <th data-options="field:'spuName'" width="30%">商品名称</th>
+            <th data-options="field:'description'" width="60%">商品描述</th>
+        </tr>
+        </thead>
+    </table>
+    <!-----------------列表的工具栏----------------------------->
+    <div id="spuListTB" style="padding:5px;height:auto">
+        <div style="margin-bottom:5px">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addSpuInfo()">添加</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editSpuInfo()">编辑</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addSkuInfo()">增加sku</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-search" plain="true" onclick="showSkuInfoList()">
+                SKU列表</a>
+        </div>
+        <label for="ctg1ForSpuList">一级分类：</label>
+        <input id="ctg1ForSpuList" class="easyui-combobox"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                url:'getCatalog1',
+                onSelect:function(rec){
+                    $('#ctg2ForSpuList').combobox('clear');
+                    $('#ctg3ForSpuList').combobox('clear');
+                    var url = 'getCatalog2?catalog1Id='+rec.id;
+                    $('#ctg2ForSpuList').combobox('reload',url);
+                }
+            "
+        >
+        <label for="ctg2ForSpuList">二级分类：</label>
+        <input id="ctg2ForSpuList" class="easyui-combobox"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                onSelect: function(rec){
+                    $('#ctg3ForSpuList').combobox('clear');
+                    var url = 'getCatalog3?catalog2Id='+rec.id;
+                    $('#ctg3ForSpuList').combobox('reload', url);
+                }
+            "
+        />
+        <label for="ctg3ForSpuList">三级分类：</label>
+        <input id="ctg3ForSpuList" class="easyui-combobox" name="dept"
+            data-options="
+                valueField:'id',
+                textField:'name',
+                method:'get',
+                onSelect: function(rec){
+                    var url = 'getSpuInfoList?catalog3Id='+rec.id;
+                    $('#spuListDG').datagrid('reload', url);
+                }
+            "
+        />
+    </div>
+    <div id="spuInfoDL" class="easyui-dialog" title="平台属性编辑" style="width:600px;height:400px;"
+         data-options="
+             iconCls:'icon-save',
+             resizable:true,
+             modal:true,
+             closed:true
+         "
+         buttons='#buttonsOfSpuInfoDL'
+    >
+        <br>
+        <label for="attrName">销售属性名称：</label>
+        <input id="attrName" name="attrName" class="easyui-textbox" data-options="" style="width:300px"/>
+        <!--baseAttrValue.attrId=baseAttrInfo.id-->
+        <input id="attrId" name="attrId" type="hidden"/>
+        <br><br>
+        <table id="spuValueListDG" class="easyui-datagrid" title="平台属性值列表" style="width:100%;height:100%"
+               data-options="
+            fitColumns:true,
+            singleSelect:true,
+            method:'get'
+        "
+        >
+        </table>
+    </div>
+    <div id="buttonsOfSpuInfoDL">
+        <a href="#" class="easyui-linkbutton" onclick="saveAttr()">保存</a>
+        <a href="#" class="easyui-linkbutton" onclick="javascript:$('#attrInfoDL').dialog('close')">关闭</a>
+    </div>
+</div>
+
+<div th:include="spuInfoPage"></div>
+
+<div th:include="skuInfoPage"></div>
+
+<!--<div th:include="skuListPage"></div>-->
+
+</body>
+<script type="text/javascript">
+    function addSpuInfo(){
+        if (!checkBeforeDialog()) {
+            return;
+        }
+        // 初始化函数：
+        initSpuInfoDlg();
+    }
+
+    function addSkuInfo() {
+        // 获得选中的spu对象
+        var spuRow = $('#spuListDG').datagrid('getSelected');
+        var ctg3val=$("#ctg3ForSpuList").combobox('getValue');
+        // spuRow.id = spuInfo.id ,'' = skuInfo   ctg3val=catalog3Id
+        initSkuInfoDlg(spuRow.id,'',ctg3val);//在skuInfoPage.html中
+
+    }
+
+    function checkBeforeDialog() {
+        var ctg3val = $("#ctg3ForSpuList").combobox('getValue');
+        if (ctg3val == '') {
+            //没有选择第三级分类
+            $.messager.alert('警告', '请先选择第三级分类');
+            return false;
+        } else {
+            return true;
+        }
+    }
+</script>
+</html>
