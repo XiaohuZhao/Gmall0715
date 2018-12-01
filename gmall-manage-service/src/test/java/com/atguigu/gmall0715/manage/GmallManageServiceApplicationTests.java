@@ -13,5 +13,4 @@ public class GmallManageServiceApplicationTests {
     public void contextLoads() {
     }
 
-
 }
