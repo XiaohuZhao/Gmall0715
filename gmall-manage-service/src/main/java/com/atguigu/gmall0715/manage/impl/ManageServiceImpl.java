@@ -342,8 +342,6 @@ public class ManageServiceImpl implements ManageService {
         List<SkuImage> skuImageList = skuImageMapper.select(skuImage);
         skuInfo.setSkuImageList(skuImageList);
 
-        /*
-        页面中暂时不需要这些信息
         SkuAttrValue skuAttrValue = new SkuAttrValue();
         skuAttrValue.setSkuId(skuId);
         List<SkuAttrValue> skuAttrValueList = skuAttrValueMapper.select(skuAttrValue);
@@ -353,7 +351,7 @@ public class ManageServiceImpl implements ManageService {
         skuSaleAttrValue.setSkuId(skuId);
         List<SkuSaleAttrValue> skuSaleAttrValueList = skuSaleAttrValueMapper.select(skuSaleAttrValue);
         skuInfo.setSkuSaleAttrValueList(skuSaleAttrValueList);
-        */
+
         return skuInfo;
     }
 
