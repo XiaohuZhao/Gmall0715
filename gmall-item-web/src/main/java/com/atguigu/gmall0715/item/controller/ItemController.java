@@ -1,6 +1,7 @@
 package com.atguigu.gmall0715.item.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.atguigu.gmall0715.anootation.LoginRequire;
 import com.atguigu.gmall0715.bean.SkuInfo;
 import com.atguigu.gmall0715.bean.SkuSaleAttrValue;
 import com.atguigu.gmall0715.bean.SpuSaleAttr;
@@ -21,6 +22,7 @@ public class ItemController {
     @Reference
     private ManageService manageService;
 
+    @LoginRequire
     @RequestMapping("/{skuId}.html")
     public String skuInfoPage(@PathVariable String skuId, HttpServletRequest request) {
         SkuInfo skuInfo = manageService.getSkuInfo(skuId);

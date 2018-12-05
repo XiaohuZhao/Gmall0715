@@ -15,7 +15,7 @@ public class ManageController {
     @Reference
     private ManageService manageService;
 
-    @RequestMapping("/index")
+    @RequestMapping({"/index","/"})
     public String index() {
         return "index";
     }
