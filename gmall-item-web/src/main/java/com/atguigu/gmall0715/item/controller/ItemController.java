@@ -1,13 +1,12 @@
 package com.atguigu.gmall0715.item.controller;
 
+import com.alibaba.dubbo.config.annotation.Reference;
 import com.alibaba.fastjson.JSON;
-import com.atguigu.gmall0715.anootation.LoginRequire;
 import com.atguigu.gmall0715.bean.SkuInfo;
 import com.atguigu.gmall0715.bean.SkuSaleAttrValue;
 import com.atguigu.gmall0715.bean.SpuSaleAttr;
 import com.atguigu.gmall0715.service.ManageService;
 import org.springframework.stereotype.Controller;
-import com.alibaba.dubbo.config.annotation.Reference;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -22,7 +21,6 @@ public class ItemController {
     @Reference
     private ManageService manageService;
 
-    @LoginRequire
     @RequestMapping("/{skuId}.html")
     public String skuInfoPage(@PathVariable String skuId, HttpServletRequest request) {
         SkuInfo skuInfo = manageService.getSkuInfo(skuId);

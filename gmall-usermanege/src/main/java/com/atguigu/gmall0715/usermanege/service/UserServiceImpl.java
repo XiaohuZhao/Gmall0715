@@ -65,6 +65,7 @@ public class UserServiceImpl implements UserInfoService {
         Jedis jedis = redisUtil.getJedis();
         String userKey = USERKEY_PREFIX + userId + USERINFOKEY_SUFFIX;
         String userJson = jedis.get(userKey);
+        jedis.expire(userKey, USERKEY_TIMEOUT);
         UserInfo userInfo = null;
         if (userJson != null && userJson.length() > 0) {
             userInfo = JSON.parseObject(userJson, UserInfo.class);
