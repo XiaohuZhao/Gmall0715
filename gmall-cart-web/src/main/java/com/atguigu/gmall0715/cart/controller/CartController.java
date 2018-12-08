@@ -9,6 +9,7 @@ import com.atguigu.gmall0715.service.ManageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -83,5 +84,40 @@ public class CartController {
         }
         request.setAttribute("cartInfoList", cartInfoList);
         return "cartList";
+    }
+
+    @LoginRequire(autoRedirect = false)
+    @RequestMapping("/checkCart")
+    @ResponseBody
+    public void checkCart(HttpServletRequest request, HttpServletResponse response) {
+        //获取用户id
+        String userId = (String) request.getAttribute("userId");
+        //获取勾选状态，1 为勾选，0 为取消勾选
+        String isChecked = request.getParameter("isChecked");
+        //获取商品id
+        String skuId = request.getParameter("skuId");
+        if (userId != null) {
+            cartService.checkCart(skuId, isChecked, userId);
+        } else {
+            cartCookieHandler.checkCart(request, response, skuId, isChecked);
+        }
+    }
+
+    @LoginRequire
+    @RequestMapping("/toTrade")
+    public String toTrade(HttpServletRequest request, HttpServletResponse response) {
+        //用户前往结算页面，合并cookie和数据库中的购物车数据
+        //获取用户id
+        String userId = (String) request.getAttribute("userId");
+        //获取cookie中的是【购物车数据
+        List<CartInfo> cartListCK = cartCookieHandler.getCartList(request);
+        if (cartListCK != null && cartListCK.size() > 0) {
+            //如果cookie中有数据，合并数据
+            cartService.mergeCartList(cartListCK, userId);
+            //合并成功删除cookie中的数据
+            cartCookieHandler.deleteCartCookie(request,response);
+        }
+        //重定向到交易页面
+        return "redirect://order.gmall.com/trade";
     }
 }

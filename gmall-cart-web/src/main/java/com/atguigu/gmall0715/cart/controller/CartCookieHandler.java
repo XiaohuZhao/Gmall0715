@@ -69,4 +69,20 @@ public class CartCookieHandler {
     public void deleteCartCookie(HttpServletRequest request, HttpServletResponse response) {
         CookieUtil.deleteCookie(request, response, COOKIE_CART_NAME);
     }
+
+    public void checkCart(HttpServletRequest request, HttpServletResponse response, String skuId, String isChecked) {
+        //取出cookie中购物车信息
+        List<CartInfo> cartList = getCartList(request);
+        if (cartList != null) {
+            //循环比较skuId，更新选中状态
+            for (CartInfo cartInfo : cartList) {
+                if (cartInfo.getSkuId().equals(skuId)) {
+                    cartInfo.setIsChecked(isChecked);
+                }
+            }
+            //序列化并保存到cookie
+            String cartListJson = JSON.toJSONString(cartList);
+            CookieUtil.setCookie(request, response, COOKIE_CART_NAME, cartListJson, COOKIE_CART_MAXAGE, true);
+        }
+    }
 }

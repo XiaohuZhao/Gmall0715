@@ -19,4 +19,14 @@ public interface CartService {
      * 合并cookie和数据库中的数据
      */
     List<CartInfo> mergeCartList(List<CartInfo> cartInfoListCK, String userId);
+
+    /**
+     * 更新购物车中勾选状态
+     */
+    void checkCart(String skuId, String isChecked, String userId);
+
+    /**
+     * 根据用户id获取已选中的购物车列表
+     */
+    List<CartInfo> getCartCheckedList(String userId);
 }

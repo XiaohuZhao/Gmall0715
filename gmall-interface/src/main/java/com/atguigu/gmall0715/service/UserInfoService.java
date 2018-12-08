@@ -15,7 +15,7 @@ public interface UserInfoService {
     /**
      * 根据用户id查询用户地址
      */
-    List<UserAddress> findUserAddressByUserId(String userId);
+    List<UserAddress> getUserAddressList(String userId);
 
     /**
      * 用户登录

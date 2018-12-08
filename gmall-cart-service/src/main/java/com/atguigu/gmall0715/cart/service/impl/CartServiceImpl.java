@@ -72,20 +72,13 @@ public class CartServiceImpl implements CartService {
         //根据key获取购物车数据
         List<String> cartJsonList = jedis.hvals(cartKey);
         if (cartJsonList != null && cartJsonList.size() > 0) {
-            List<CartInfo> cartInfoList = new ArrayList<>();
-            for (String cartJson : cartJsonList) {
-                //每一个cartJson都是一个购物车对象
-                CartInfo cartInfo = JSON.parseObject(cartJson, CartInfo.class);
-                //加入购物车集合
-                cartInfoList.add(cartInfo);
-            }
+            List<CartInfo> cartInfoList = getCartInfoListFromJson(cartJsonList);
             // 根据购物车id进行排序
             cartInfoList.sort(Comparator.comparing(CartInfo::getId));
             return cartInfoList;
         } else {
             //redis没有数据，去数据库查
-            List<CartInfo> cartInfoList = loadCartCache(userId);
-            return cartInfoList;
+            return loadCartCache(userId);
         }
     }
 
@@ -107,17 +100,86 @@ public class CartServiceImpl implements CartService {
                 }
             }
             // 不相同
-            if(!isMatck){
+            if (!isMatck) {
                 //将userId存入购物车商品中
                 cartInfoCK.setUserId(userId);
                 cartInfoMapper.insertSelective(cartInfoCK);
             }
         }
+
         // 将数据库中的数据全部放入redis中
-        List<CartInfo> cartInfoList = loadCartCache(userId);
+        //合并cookie和数据库中已勾选的购物车商品
+        //获取数据库中购物车的数据
+        List<CartInfo> cartInfoSelectedListDB = loadCartCache(userId);
+        for (CartInfo cartInfoDB : cartInfoSelectedListDB) {
+            for (CartInfo cartInfoCK : cartInfoListCK) {
+                //匹配skuId
+                if (cartInfoDB.getSkuId().equals(cartInfoCK.getSkuId())) {
+                    //当Cookie中的数据已选中时，设置redis中的数据也选中
+                    //此合并可能会丢失redis购物车物品的选中状态，因为数据库中没有储存选中状态
+                    if ("1".equals(cartInfoCK.getIsChecked())) {
+                        cartInfoDB.setIsChecked(cartInfoCK.getIsChecked());
+                        checkCart(cartInfoDB.getSkuId(), cartInfoCK.getIsChecked(), userId);
+                    }
+                }
+            }
+        }
+        return cartInfoSelectedListDB;
+    }
+
+    @Override
+    public void checkCart(String skuId, String isChecked, String userId) {
+        Jedis jedis = redisUtil.getJedis();
+        //取得redis中的购物车信息
+        //取得用户购物车key
+        String cartKey = CartConst.USER_KEY_PREFIX + userId + CartConst.USER_CART_KEY_SUFFIX;
+        //取redis中的信息
+        String cartJson = jedis.hget(cartKey, skuId);
+        //反序列化
+        CartInfo cartInfo = JSON.parseObject(cartJson, CartInfo.class);
+        if (cartInfo != null) {
+            //更新购物车商品的选中状态
+            cartInfo.setIsChecked(isChecked);
+            //序列化存入redis
+            String cartCheckedJson = JSON.toJSONString(cartInfo);
+            jedis.hset(cartKey, skuId, cartCheckedJson);
+            //获取储存用户购物车中已勾选的key
+            String userCheckedKey = CartConst.USER_KEY_PREFIX + userId + CartConst.USER_CHECKED_KEY_SUFFIX;
+            if (isChecked.equals("1")) {
+                //如果是选中，将商品存入已勾选的key中
+                jedis.hset(userCheckedKey, skuId, cartCheckedJson);
+            } else {
+                //如果是取消选中，将商品从已勾选的商品中删除
+                jedis.hdel(userCheckedKey, skuId);
+            }
+            jedis.close();
+        }
+    }
+
+    @Override
+    public List<CartInfo> getCartCheckedList(String userId) {
+        //获取redis中的key
+        String checkedKey = CartConst.USER_KEY_PREFIX + userId + CartConst.USER_CHECKED_KEY_SUFFIX;
+        Jedis jedis = redisUtil.getJedis();
+        List<String> cartCheckedListJson = jedis.hvals(checkedKey);
+        return getCartInfoListFromJson(cartCheckedListJson);
+    }
+
+    /**
+     * 将cartInfoListJson转换成List<CartInfo>
+     */
+    private List<CartInfo> getCartInfoListFromJson(List<String> cartInfoListJson) {
+        List<CartInfo> cartInfoList = new ArrayList<>();
+        for (String cartInfoJson : cartInfoListJson) {
+            CartInfo cartInfo = JSON.parseObject(cartInfoJson, CartInfo.class);
+            cartInfoList.add(cartInfo);
+        }
         return cartInfoList;
     }
 
+    /**
+     * 根据用户id获取数据库中购物车数据
+     */
     private List<CartInfo> loadCartCache(String userId) {
         // cartInfo 有购物车价格  商品价格(skuinfo  price)
         List<CartInfo> cartInfoList = cartInfoMapper.selectCartListWithCurPrice(userId);
