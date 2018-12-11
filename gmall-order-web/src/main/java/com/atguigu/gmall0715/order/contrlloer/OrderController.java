@@ -67,10 +67,19 @@ public class OrderController {
         String userId = (String) request.getAttribute("userId");
         // 检查tradeCode
         String tradeNo = request.getParameter("tradeNo");
-        boolean flag = orderService.checkTradeCode(userId, tradeNo);
-        if (!flag) {
+        boolean isTradeNo = orderService.checkTradeCode(userId, tradeNo);
+        if (!isTradeNo) {
             request.setAttribute("errMsg", "该页面已失效，请重新结算!");
             return "tradeFail";
+        }
+        //验库存
+        List<OrderDetail> orderDetailList = orderInfo.getOrderDetailList();
+        for (OrderDetail orderDetail : orderDetailList) {
+            //调用库存接口
+            if(!orderService.checkStock(orderDetail)){
+                request.setAttribute("errMsg", "库存不足，请重新下单!");
+                return "tradeFail";
+            }
         }
 
         //初始化参数，未支付
