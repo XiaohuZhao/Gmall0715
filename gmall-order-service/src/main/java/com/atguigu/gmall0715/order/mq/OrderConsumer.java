@@ -22,19 +22,16 @@ public class OrderConsumer {
             orderService.updateOrderStatus(orderId, ProcessStatus.PAID);
             // 支付成功，通知仓库减库存
             orderService.sendOrderStatus(orderId);
-            orderService.updateOrderStatus(orderId,ProcessStatus.NOTIFIED_WARE);
+            orderService.updateOrderStatus(orderId, ProcessStatus.NOTIFIED_WARE);
         } else {
             orderService.updateOrderStatus(orderId, ProcessStatus.PAY_FAIL);
         }
     }
+
     @JmsListener(destination = "SKU_DEDUCT_QUEUE", containerFactory = "jmsQueueListener")
     public void consumeSkuDeduct(MapMessage mapMessage) throws JMSException {
         String orderId = mapMessage.getString("orderId");
         String status = mapMessage.getString("status");
-        if ("DEDUCTED".equals(status)) {
-            orderService.updateOrderStatus(orderId,ProcessStatus.WAITING_DELEVER);
-        } else {
-            orderService.updateOrderStatus(orderId, ProcessStatus.STOCK_EXCEPTION);
-        }
+        orderService.updateOrderStatus(orderId, "DEDUCTED".equals(status) ? ProcessStatus.WAITING_DELEVER : ProcessStatus.STOCK_EXCEPTION);
     }
 }

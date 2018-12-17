@@ -9,6 +9,8 @@ import javax.persistence.Id;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PaymentInfo implements Serializable {
     @Column
@@ -121,5 +123,23 @@ public class PaymentInfo implements Serializable {
 
     public void setCallbackContent(String callbackContent) {
         this.callbackContent = callbackContent;
+    }
+
+    public void createPaymentInfo (OrderInfo orderInfo) {
+        this.orderId=orderInfo.getId();
+        this.outTradeNo=orderInfo.getOutTradeNo();
+        this.totalAmount=orderInfo.getTotalAmount();
+        this.Subject=orderInfo.getTradeBody();
+        this.paymentStatus=PaymentStatus.UNPAID;
+    }
+
+    public Map<String, Object> getAlipayParams () {
+        Map<String,Object> bizContentMap = new HashMap<>();
+        bizContentMap.put("out_trade_no", this.getOutTradeNo());
+        //与支付宝签约的商品码名称，仅支持“FAST_INSTANT_TRADE_PAY”
+        bizContentMap.put("product_code", "FAST_INSTANT_TRADE_PAY");
+        bizContentMap.put("subject", this.getSubject());
+        bizContentMap.put("total_amount", this.getTotalAmount());
+        return bizContentMap;
     }
 }

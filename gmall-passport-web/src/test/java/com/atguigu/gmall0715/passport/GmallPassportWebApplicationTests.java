@@ -28,6 +28,7 @@ public class GmallPassportWebApplicationTests {
 
     @Test
     public void contextLoads() {
+
     }
 
 }

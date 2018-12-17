@@ -23,8 +23,7 @@ public class JwtUtil {
         // 将用户的信息添加进去
         jwtBuilder = jwtBuilder.setClaims(param);
 
-        String token = jwtBuilder.compact();
-        return token;
+        return jwtBuilder.compact();
 
     }
 

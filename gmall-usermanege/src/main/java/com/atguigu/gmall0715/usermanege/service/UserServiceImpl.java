@@ -30,7 +30,6 @@ public class UserServiceImpl implements UserInfoService {
     public String USERINFOKEY_SUFFIX = ":info";
     public int USERKEY_TIMEOUT = 60 * 60 * 24;
 
-
     @Override
     public List<UserInfo> findAll() {
         return userInfoMapper.selectAll();
